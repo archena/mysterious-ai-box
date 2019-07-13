@@ -1,0 +1,8 @@
+# Emacs
+*~
+
+# Virtualenv
+ai/env
+
+# PlatformIO
+.pio
