@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include <NeuralNetwork.h>
 
-#define LED_A 2
-#define LED_B 4
+#define LED_TRAINING 5
+#define NN_OUTPUT_OFF 2
+#define NN_OUTPUT_ON 4
 #define INPUT_A 22
 #define INPUT_B 23
 
@@ -29,10 +30,13 @@ NeuralNetwork NN(layers, NumberOf(layers));
 void setup() {
   Serial.begin(9600);
 
-  pinMode(LED_A, OUTPUT);
-  pinMode(LED_B, OUTPUT);
+  pinMode(NN_OUTPUT_OFF, OUTPUT);
+  pinMode(NN_OUTPUT_ON, OUTPUT);
+  pinMode(LED_TRAINING, OUTPUT);
   pinMode(INPUT_A, INPUT);
   pinMode(INPUT_B, INPUT);
+
+  digitalWrite(LED_TRAINING, HIGH);
 
   // Train a neural network
   const int epochs = 3000;
@@ -51,11 +55,12 @@ void setup() {
 
   // Output weights to serial
   NN.print();
+  digitalWrite(LED_TRAINING, LOW);
 }
 
 void loop() {
-  digitalWrite(LED_A, LOW);
-  digitalWrite(LED_B, LOW);
+  digitalWrite(NN_OUTPUT_OFF, LOW);
+  digitalWrite(NN_OUTPUT_ON, LOW);
 
   const float input[2] = {
     digitalRead(INPUT_A) == HIGH ? 1.0f : 0.0f,
@@ -67,10 +72,9 @@ void loop() {
   if (classification == NULL) {
     Serial.println("Error: classification is NULL");
   } else if (classification[0] >= 0.5) {
-    digitalWrite(LED_A, HIGH);
+    digitalWrite(NN_OUTPUT_OFF, HIGH);
   } else {
-    digitalWrite(LED_B, HIGH);
+    digitalWrite(NN_OUTPUT_ON, HIGH);
   }
-
   delay(250);
 }
