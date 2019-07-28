@@ -4,6 +4,8 @@
 #define LED_TRAINING_PROGRESS 5
 #define LED_TRAIN_MODE_ENABLED 23
 #define TRAINING_MODE_SWITCH 13
+#define TRAINING_STORE_BUTTON 12
+#define TRAINING_STORE_LED 25
 #define INPUT_A 18
 #define INPUT_B 19
 #define INPUT_C 21
@@ -82,12 +84,18 @@ void updateOutput(const float* classification) {
 
 void train() {
   digitalWrite(LED_TRAINING_PROGRESS, HIGH);
+  bool storeLedState = LOW;
 
   const int epochs = 3000;
   for (int i = 0; i < epochs; ++i) {
     for (int j = 0; j < countof(inputs); ++j) {
       NN.FeedForward(inputs[j]);
       NN.BackProp(expectedOutput[j]);
+    }
+
+    if (i % 250 == 0) {
+      storeLedState = storeLedState == HIGH ? LOW : HIGH;
+      digitalWrite(TRAINING_STORE_LED, storeLedState);
     }
   }
 
@@ -100,6 +108,7 @@ void train() {
   NN.print();
 
   digitalWrite(LED_TRAINING_PROGRESS, LOW);
+  digitalWrite(TRAINING_STORE_LED, LOW);
 }
 
 void reset() {
@@ -116,6 +125,8 @@ void setup() {
   pinMode(LED_TRAINING_PROGRESS, OUTPUT);
   pinMode(LED_TRAIN_MODE_ENABLED, OUTPUT);
   pinMode(TRAINING_MODE_SWITCH, INPUT);
+  pinMode(TRAINING_STORE_BUTTON, INPUT);
+  pinMode(TRAINING_STORE_LED, OUTPUT);
   pinMode(INPUT_A, INPUT);
   pinMode(INPUT_B, INPUT);
   pinMode(INPUT_C, INPUT);
@@ -130,6 +141,8 @@ void setup() {
 }
 
 void loop() {
+  digitalWrite(TRAINING_STORE_LED, LOW);
+
   const int a = digitalRead(INPUT_A) == HIGH ?  1 : 0;
   const int b = digitalRead(INPUT_B) == HIGH ?  1 : 0;
   const int c = digitalRead(INPUT_C) == HIGH ?  1 : 0;
@@ -148,12 +161,14 @@ void loop() {
     const bool red = digitalRead(TRAINING_RED);
     const bool green = digitalRead(TRAINING_GREEN);
     const bool blue = digitalRead(TRAINING_BLUE);
-
     digitalWrite(OUTPUT_RED, red);
     digitalWrite(OUTPUT_GREEN, green);
     digitalWrite(OUTPUT_BLUE, blue);
 
-    if (input > 0) {
+    if (input > 0 && digitalRead(TRAINING_STORE_BUTTON) == HIGH) {
+      Serial.printf("Storing pattern {%d, %d, %d} -> {%d, %d, %d} (%d)\n", red, blue, green, a, b, c, input);
+      digitalWrite(TRAINING_STORE_LED, HIGH);
+
       if (red == HIGH) {
         expectedOutput[input][0] = 0;
         expectedOutput[input][1] = 1;
